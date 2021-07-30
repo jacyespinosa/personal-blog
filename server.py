@@ -37,7 +37,14 @@ db.create_all()
 
 @app.route('/')
 def get_all_posts():
-    return render_template("index.html")
+    all_posts = BlogPost.query.all()
+    return render_template("index.html", all_posts=all_posts)
+
+
+@app.route("/post/<int:blog_id>", methods=["GET", "POST"])
+def show_post(blog_id):
+    requested_post = BlogPost.query.get(blog_id)
+    return render_template("post.html", post=requested_post)
 
 
 @app.route("/new_post", methods=['GET', 'POST'])
@@ -76,3 +83,4 @@ def contact():
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000, debug=True)
+    ckeditor.init_app(app, CKEDITOR_SERVE_LOCAL=True)
