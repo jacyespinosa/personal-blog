@@ -1,7 +1,10 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request, redirect, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_bootstrap import Bootstrap
-from sqlalchemy import Column, Integer, ForeignKey, String, Text
+from sqlalchemy import Column, Integer, String, Text
+from flask_ckeditor import CKEditor
+from forms import CreatePostForm
+import datetime
 
 
 app = Flask(__name__)
@@ -13,6 +16,10 @@ Bootstrap(app)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///posts.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
+
+#CKEDITOR USED TO ADD BLOG POST OR TO POST COMMENTS
+ckeditor = CKEditor(app)
+app.config['CKEDITOR_PKG_TYPE'] = 'full'
 
 
 class BlogPost(db.Model):
@@ -31,6 +38,30 @@ db.create_all()
 @app.route('/')
 def get_all_posts():
     return render_template("index.html")
+
+
+@app.route("/new_post", methods=['GET', 'POST'])
+def create_post():
+    form = CreatePostForm(request.form)
+    now = datetime.datetime.now()
+    if request.method == 'POST':
+        if form.validate_on_submit():
+            new_entry = BlogPost(
+                title=form.title.data,
+                subtitle=form.subtitle.data,
+                date=now.strftime("%B %d, %Y"),
+                body=form.body.data,
+                img_url=form.img_url.data
+            )
+
+            db.session.add(new_entry)
+            db.session.commit()
+            return redirect("/")
+        else:
+            flash("Please make sure the fields are filled out.")
+            return render_template("make-post.html", form=form)
+
+    return render_template("make-post.html", form=form)
 
 
 @app.route("/about")
