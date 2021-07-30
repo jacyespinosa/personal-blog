@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, flash, url_for
+from flask import Flask, render_template, request, redirect, flash, url_for, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_bootstrap import Bootstrap
 from sqlalchemy import Column, Integer, String, Text
@@ -30,6 +30,14 @@ class BlogPost(db.Model):
     date = Column(String(250), nullable=False)
     body = Column(Text, nullable=False)
     img_url = Column(String(250), nullable=False)
+
+    def to_dict(self):
+        dictionary = {}
+
+        for column in self.__table__.columns:
+            dictionary[column.name] = getattr(self, column.name)
+        return dictionary
+
 
 #Line below only required once, when creating DB.
 db.create_all()
@@ -93,6 +101,16 @@ def edit(blog_id):
 
     return render_template("make-post.html", form=edit_form, edit_successful=True)
 
+
+@app.route("/delete/<int:blog_id>", methods=["GET", "POST", "DELETE"])
+def delete(blog_id):
+    post_to_delete = BlogPost.query.get(blog_id)
+    if post_to_delete:
+        db.session.delete(post_to_delete)
+        db.session.commit()
+        return redirect(url_for('get_all_posts'))
+    else:
+        return jsonify(error={"Not Found": "Sorry a blog post with that id was not found in the database."}), 404
 
 
 @app.route("/about")

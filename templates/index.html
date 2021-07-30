@@ -30,8 +30,7 @@
                             <h3 class="post-subtitle">{{ blog_post.subtitle }}</h3>
                         </a>
                         <p class="post-meta">
-                            Posted by
-                            {{ blog_post.date }}
+                            Posted by {{ blog_post.date }} <a href="{{url_for('delete', blog_id=blog_post.id) }}">✘</a>
                         </p>
                     </div>
 
