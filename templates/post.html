@@ -14,9 +14,7 @@
                             <h1>{{ post.title }}</h1>
                             <h2 class="subheading">{{ post.subtitle }}</h2>
                             <span class="meta">
-                                Posted
-
-                                on {{ post.date }}
+                                Posted on {{ post.date }}
                             </span>
                         </div>
                     </div>
@@ -32,7 +30,8 @@
                     {{post.body|safe}}
                   </p>
                    <hr>
-
+                       <div class="clearfix">
+                            <a class="btn btn-primary float-right" href="{{url_for('edit', blog_id=post.id) }}">Edit Post</a>
                                 </div>
                             </li>
                         </ul>

@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, flash
+from flask import Flask, render_template, request, redirect, flash, url_for
 from flask_sqlalchemy import SQLAlchemy
 from flask_bootstrap import Bootstrap
 from sqlalchemy import Column, Integer, String, Text
@@ -69,6 +69,30 @@ def create_post():
             return render_template("make-post.html", form=form)
 
     return render_template("make-post.html", form=form)
+
+
+@app.route("/edit-post/<int:blog_id>", methods=['GET', 'POST'])
+def edit(blog_id):
+    requested_post = BlogPost.query.get(blog_id)
+    now = datetime.datetime.now()
+    edit_form = CreatePostForm(
+        title=requested_post.title,
+        subtitle=requested_post.subtitle,
+        img_url=requested_post.img_url,
+        body=requested_post.body
+    )
+    if edit_form.validate_on_submit():
+        requested_post.title = edit_form.title.data
+        requested_post.subtitle = edit_form.subtitle.data
+        requested_post.date = now.strftime("%B %d, %Y")
+        requested_post.body = edit_form.body.data
+        requested_post.img_url = edit_form.img_url.data
+
+        db.session.commit()
+        return redirect(url_for("show_post", blog_id=requested_post.id))
+
+    return render_template("make-post.html", form=edit_form, edit_successful=True)
+
 
 
 @app.route("/about")
