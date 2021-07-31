@@ -15,6 +15,7 @@
                             <h2 class="subheading">{{ post.subtitle }}</h2>
                             <span class="meta">
                                 Posted by
+                                <a href="{{ url_for('get_all_posts') }}">{{ post.author.name }}</a>
                                 on {{ post.date }}
                             </span>
                         </div>
@@ -35,7 +36,26 @@
                    {% if user.id == 1 %}
                         <a class="btn btn-primary float-right" href="{{url_for('edit', blog_id=post.id) }}">Edit Post</a>
                    {% endif %}
+                   <div style="color: red"> {% with messages = get_flashed_messages() %} {{ messages[0] }} {% endwith %} </div>
+                   {{ wtf.quick_form(form, novalidate=True, button_map={'submit': 'primary'}) }}
+                   {{ ckeditor.load() }}
+                    <br>
+                    <div class="col-lg-8 col-md-10 ml-auto comment" style="margin-left: 0px;">
+                        {% for comment in post.comments: %}
+                        <ul class="commentList">
+                            <li>
+                                <div class="commenterImage">
+                                    <img src="{{ comment.comment_author.email | gravatar }}"/>
+                                </div>
+                                <div class="commentText">
+                                    {{comment.text|safe}}
+                                    <span class="date sub-text">{{comment.comment_author.name}}</span>
 
+                                </div>
+                            </li>
+                        </ul>
+                        {% endfor %}
+                    </div>
 
                 </div>
                   </div>

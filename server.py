@@ -1,17 +1,25 @@
-from flask import Flask, render_template, request, redirect, flash, url_for, jsonify
-from flask_sqlalchemy import SQLAlchemy
+from flask import Flask, render_template, redirect, url_for, request, jsonify, flash
 from flask_bootstrap import Bootstrap
-from sqlalchemy import Column, Integer, String, Text
+from flask_gravatar import Gravatar
+from flask_sqlalchemy import SQLAlchemy
 from flask_ckeditor import CKEditor
-from forms import CreatePostForm, RegisterForm, LogInForm
+from forms import CreatePostForm, RegisterForm, LogInForm, CommentForm
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin, login_user, LoginManager, current_user, logout_user
+from sqlalchemy import Column, Integer, ForeignKey, String, Text
+from sqlalchemy.orm import relationship
+from sqlalchemy.ext.declarative import declarative_base
 import datetime
 
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = "ENTER SECRET KEY"
+app.config['SECRET_KEY'] = "b'l\xc2m\xcc[{J\x80\x02\xf5\xc4\xe5\r\xdb\x87!'"
 Bootstrap(app)
+
+
+#CKEDITOR USED TO ADD BLOG POST OR TO POST COMMENTS
+ckeditor = CKEditor(app)
+app.config['CKEDITOR_PKG_TYPE'] = 'full'
 
 
 #CONNECT TO DB
@@ -19,9 +27,9 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///posts.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-#CKEDITOR USED TO ADD BLOG POST OR TO POST COMMENTS
-ckeditor = CKEditor(app)
-app.config['CKEDITOR_PKG_TYPE'] = 'full'
+
+#TO CREATE RELATIONAL DATABASES
+Base = declarative_base()
 
 
 #FLASK-LOGIN
@@ -29,14 +37,48 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 
 
-class BlogPost(db.Model):
+#GRAVATAR IMAGES USED TO GENERATE RANDOM IMAGES FOR USER COMMENTS
+gravatar = Gravatar(app,
+                    size='50px',
+                    rating='g',
+                    default='retro',
+                    force_default=False,
+                    force_lower=False,
+                    use_ssl=False,
+                    base_url=None)
+
+
+#CREATE USER TABLE IN THE posts.db DATABASE
+class User(UserMixin, db.Model, Base):
+    __tablename__ = 'users'
+    id = Column(Integer, primary_key=True)
+    email = Column(String(100), unique=True)
+    password = Column(String(100))
+    name = Column(String(1000))
+
+    #This will act like a List of BlogPost objects attached to each User.
+    #The "author" refers to the author property in the BlogPost class.
+    posts = relationship("BlogPost", back_populates="author")
+
+    # "comment_author" refers to the comment_author property in the Comment class.
+    comments = relationship("Comment", back_populates="comment_author")
+
+
+class BlogPost(db.Model, Base):
     __tablename__ = 'blog_posts'
     id = Column(Integer, primary_key=True)
+    # Create Foreign Key, "users.id" the users refers to the tablename of User
+    author_id = Column(Integer, ForeignKey('users.id'))
+    # Create reference to the User object, the "posts" refers to the posts property in the User class.
+    author = relationship("User", back_populates="posts")
     title = Column(String(250), unique=False, nullable=False)
     subtitle = Column(String(250), nullable=False)
     date = Column(String(250), nullable=False)
     body = Column(Text, nullable=False)
     img_url = Column(String(250), nullable=False)
+
+    # The "blog_post" refers to the blog_post property in the Comment class.
+    comments = relationship("Comment", back_populates="blog_post")
 
     def to_dict(self):
         dictionary = {}
@@ -46,18 +88,28 @@ class BlogPost(db.Model):
         return dictionary
 
 
-#CREATE USER TABLE IN THE posts.db DATABASE
-class User(UserMixin, db.Model):
-    __tablename__ = 'users'
+class Comment(db.Model, Base):
+    __tablename__ = "comments"
     id = Column(Integer, primary_key=True)
-    email = Column(String(100), unique=True)
-    password = Column(String(100))
-    name = Column(String(1000))
+    #Create Foreign Key, "users.id" The users refers to the tablename of the Users class.
+    author_id = Column(Integer, ForeignKey('users.id'))
+    #"comments" refers to the comments property in the User class.
+    comment_author = relationship("User", back_populates="comments")
+    #Create Foreign Key, "blog_posts.id", The blog_posts refers to the tablename of the BlogPost class.
+    post_id = Column(Integer, ForeignKey('blog_posts.id'))
+    # "comments" refers to the comments property in the BlogPost class.
+    blog_post = relationship("BlogPost", back_populates="comments")
+    text = Column(Text, nullable=False)
+
 
 
 
 #Line below only required once, when creating DB.
-db.create_all()
+# db.create_all()
+
+'''
+NEED TO ONLY SHOW THREE BLOG POSTS AND CREATE AN ANCHOR TAG FOR THE OLDER POSTS.
+'''
 
 
 @app.route('/')
@@ -68,8 +120,23 @@ def get_all_posts():
 
 @app.route("/post/<int:blog_id>", methods=["GET", "POST"])
 def show_post(blog_id):
+    form = CommentForm(request.form)
     requested_post = BlogPost.query.get(blog_id)
-    return render_template("post.html", post=requested_post, user=current_user)
+
+    if form.validate_on_submit():
+        if not current_user.is_authenticated:
+            flash("You need to login or register to comment.")
+            return redirect(url_for("login"))
+
+        new_comment = Comment(
+            text=form.comment.data,
+            comment_author=current_user,
+            blog_post=requested_post
+        )
+        db.session.add(new_comment)
+        db.session.commit()
+
+    return render_template("post.html", post=requested_post, form=form, user=current_user)
 
 
 @app.route("/new_post", methods=['GET', 'POST'])
@@ -83,6 +150,7 @@ def create_post():
                 subtitle=form.subtitle.data,
                 date=now.strftime("%B %d, %Y"),
                 body=form.body.data,
+                author_id=current_user.id,
                 img_url=form.img_url.data
             )
 
@@ -104,6 +172,7 @@ def edit(blog_id):
         title=requested_post.title,
         subtitle=requested_post.subtitle,
         img_url=requested_post.img_url,
+        author=current_user.id,
         body=requested_post.body
     )
     if edit_form.validate_on_submit():

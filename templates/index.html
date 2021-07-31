@@ -30,7 +30,8 @@
                             <h3 class="post-subtitle">{{ blog_post.subtitle }}</h3>
                         </a>
                         <p class="post-meta">
-                            Posted on
+                            Posted by
+                            <a href="{{ url_for('get_all_posts') }}">{{ blog_post.author.name }}</a>
                             {{ blog_post.date }}
                             {% if user.id == 1 %}
                             <a href="{{url_for('delete', blog_id=blog_post.id) }}">✘</a>
