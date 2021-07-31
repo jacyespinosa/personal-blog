@@ -3,7 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_bootstrap import Bootstrap
 from sqlalchemy import Column, Integer, String, Text
 from flask_ckeditor import CKEditor
-from forms import CreatePostForm, RegisterForm
+from forms import CreatePostForm, RegisterForm, LogInForm
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin, login_user, LoginManager, current_user, logout_user
 import datetime
@@ -159,6 +159,33 @@ def register():
             return redirect(url_for('get_all_posts'))
 
     return render_template("register.html", form=form, user=current_user)
+
+
+@app.route('/login', methods=["GET", "POST"])
+def login():
+    form = LogInForm(request.form)
+    if request.method == 'POST':
+        if form.validate_on_submit():
+            user_email_input = form.email.data
+            user_password_input = form.password.data
+
+            in_database = User.query.filter_by(email=user_email_input).first()
+            #Check if the email exists in the database.
+            if in_database:
+                email_stored = in_database.email
+                password_stored = in_database.password
+                #Check if the entered password and email matches the ones in the database.
+                if check_password_hash(password_stored, user_password_input) and (email_stored == user_email_input):
+                    login_user(in_database)
+                    return redirect(url_for("get_all_posts"))
+                #When the user enter a password and/or email that does not exist in the database.
+                else:
+                    flash("Please enter the correct email/password.")
+            #When the user enter a password and/or email that does not exist in the database.
+            else:
+                flash("Invalid credentials")
+
+    return render_template("login.html", form=form, user=current_user)
 
 
 @app.route("/about")
