@@ -3,7 +3,9 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_bootstrap import Bootstrap
 from sqlalchemy import Column, Integer, String, Text
 from flask_ckeditor import CKEditor
-from forms import CreatePostForm
+from forms import CreatePostForm, RegisterForm
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask_login import UserMixin, login_user, LoginManager, current_user, logout_user
 import datetime
 
 
@@ -22,6 +24,11 @@ ckeditor = CKEditor(app)
 app.config['CKEDITOR_PKG_TYPE'] = 'full'
 
 
+#FLASK-LOGIN
+login_manager = LoginManager()
+login_manager.init_app(app)
+
+
 class BlogPost(db.Model):
     __tablename__ = 'blog_posts'
     id = Column(Integer, primary_key=True)
@@ -37,6 +44,16 @@ class BlogPost(db.Model):
         for column in self.__table__.columns:
             dictionary[column.name] = getattr(self, column.name)
         return dictionary
+
+
+#CREATE USER TABLE IN THE posts.db DATABASE
+class User(UserMixin, db.Model):
+    __tablename__ = 'users'
+    id = Column(Integer, primary_key=True)
+    email = Column(String(100), unique=True)
+    password = Column(String(100))
+    name = Column(String(1000))
+
 
 
 #Line below only required once, when creating DB.
@@ -111,6 +128,37 @@ def delete(blog_id):
         return redirect(url_for('get_all_posts'))
     else:
         return jsonify(error={"Not Found": "Sorry a blog post with that id was not found in the database."}), 404
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+
+@app.route('/register', methods=["GET", "POST"])
+def register():
+    form = RegisterForm(request.form)
+    if form.validate_on_submit():
+        # Email already exists
+        if User.query.filter_by(email=form.email.data).first():
+            flash("You've already signed up with that email, log in instead!")
+            return redirect(url_for('login'))
+        #Email doesn't exist in the database
+        else:
+            # Salt/Hash the User's password
+            secured_password = generate_password_hash(form.password.data, method="pbkdf2:sha256", salt_length=8)
+            new_user = User(
+                name=form.name.data,
+                email=form.email.data,
+                password=secured_password,
+            )
+
+            db.session.add(new_user)
+            db.session.commit()
+            login_user(new_user)
+            return redirect(url_for('get_all_posts'))
+
+    return render_template("register.html", form=form, user=current_user)
 
 
 @app.route("/about")
