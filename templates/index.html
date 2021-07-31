@@ -30,7 +30,11 @@
                             <h3 class="post-subtitle">{{ blog_post.subtitle }}</h3>
                         </a>
                         <p class="post-meta">
-                            Posted by {{ blog_post.date }} <a href="{{url_for('delete', blog_id=blog_post.id) }}">✘</a>
+                            Posted on
+                            {{ blog_post.date }}
+                            {% if user.id == 1 %}
+                            <a href="{{url_for('delete', blog_id=blog_post.id) }}">✘</a>
+                            {% endif %}
                         </p>
                     </div>
 
@@ -40,7 +44,9 @@
 
                     <!-- New Post -->
                     <div class="clearfix">
-                      <a class="btn btn-primary" href="{{ url_for('create_post') }}">Create New Post</a>
+                        {% if user.id == 1 %}
+                            <a class="btn btn-primary" href="{{ url_for('create_post') }}">Create New Post</a>
+                    {% endif %}
                     </div>
                   </div>
                 </div>

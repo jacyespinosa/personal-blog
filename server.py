@@ -63,13 +63,13 @@ db.create_all()
 @app.route('/')
 def get_all_posts():
     all_posts = BlogPost.query.all()
-    return render_template("index.html", all_posts=all_posts)
+    return render_template("index.html", all_posts=all_posts, user=current_user)
 
 
 @app.route("/post/<int:blog_id>", methods=["GET", "POST"])
 def show_post(blog_id):
     requested_post = BlogPost.query.get(blog_id)
-    return render_template("post.html", post=requested_post)
+    return render_template("post.html", post=requested_post, user=current_user)
 
 
 @app.route("/new_post", methods=['GET', 'POST'])
@@ -93,7 +93,7 @@ def create_post():
             flash("Please make sure the fields are filled out.")
             return render_template("make-post.html", form=form)
 
-    return render_template("make-post.html", form=form)
+    return render_template("make-post.html", form=form, user=current_user)
 
 
 @app.route("/edit-post/<int:blog_id>", methods=['GET', 'POST'])
@@ -116,7 +116,7 @@ def edit(blog_id):
         db.session.commit()
         return redirect(url_for("show_post", blog_id=requested_post.id))
 
-    return render_template("make-post.html", form=edit_form, edit_successful=True)
+    return render_template("make-post.html", form=edit_form, edit_successful=True, user=current_user)
 
 
 @app.route("/delete/<int:blog_id>", methods=["GET", "POST", "DELETE"])
@@ -196,12 +196,12 @@ def logout():
 
 @app.route("/about")
 def about():
-    return render_template("about.html")
+    return render_template("about.html", user=current_user)
 
 
 @app.route("/contact")
 def contact():
-    return render_template("contact.html")
+    return render_template("contact.html", user=current_user)
 
 
 if __name__ == "__main__":
