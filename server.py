@@ -188,6 +188,12 @@ def login():
     return render_template("login.html", form=form, user=current_user)
 
 
+@app.route('/logout')
+def logout():
+    logout_user()
+    return redirect(url_for('get_all_posts'))
+
+
 @app.route("/about")
 def about():
     return render_template("about.html")
