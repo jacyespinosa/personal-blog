@@ -105,7 +105,7 @@ class Comment(db.Model, Base):
 
 
 #Line below only required once, when creating DB.
-# db.create_all()
+db.create_all()
 
 '''
 NEED TO ONLY SHOW THREE BLOG POSTS AND CREATE AN ANCHOR TAG FOR THE OLDER POSTS.
