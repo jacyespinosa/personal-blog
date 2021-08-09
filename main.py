@@ -10,10 +10,10 @@ from sqlalchemy import Column, Integer, ForeignKey, String, Text
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 import datetime
-
+import os
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = "b'l\xc2m\xcc[{J\x80\x02\xf5\xc4\xe5\r\xdb\x87!'"
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
 Bootstrap(app)
 
 
@@ -23,7 +23,7 @@ app.config['CKEDITOR_PKG_TYPE'] = 'full'
 
 
 #CONNECT TO DB
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///posts.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
