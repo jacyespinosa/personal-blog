@@ -23,7 +23,7 @@
                 <div class="col-md-10 col-lg-8 col-xl-7">
 
                     <!-- Post preview-->
-                    {% for blog_post in all_posts %}
+                    {% for blog_post in all_posts.items %}
                     <div class="post-preview">
                         <a href="{{ url_for('show_post', blog_id=blog_post['id']) }}">
                             <h2 class="post-title">{{ blog_post.title }}</h2>
@@ -42,6 +42,20 @@
                     <!-- Divider-->
                     <hr class="my-4" />
                     {% endfor %}
+
+                    <div class="pagination-btn" style="padding-top: 15px;">
+                     {% for page_num in all_posts.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                         {% if page_num %}
+                             {% if all_posts.page == page_num %}
+                                <a class="btn btn-info mb-4" href="{{ url_for('get_all_posts', page=page_num)}}">{{ page_num }}</a>
+                             {% else%}
+                                <a class="btn btn-outline-info mb-4"href="{{ url_for('get_all_posts', page=page_num)}}">{{ page_num }}</a>
+                             {% endif %}
+                         {% else %}
+                             ...
+                         {% endif %}
+                     {% endfor %}
+                    </div>
 
                     <!-- New Post -->
                     <div class="clearfix">

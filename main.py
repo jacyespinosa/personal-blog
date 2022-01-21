@@ -10,10 +10,14 @@ from sqlalchemy import Column, Integer, ForeignKey, String, Text
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 import datetime
+from dotenv import load_dotenv
 import os
 
+load_dotenv()
+
+
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 Bootstrap(app)
 
 
@@ -107,14 +111,11 @@ class Comment(db.Model, Base):
 #Line below only required once, when creating DB.
 db.create_all()
 
-'''
-NEED TO ONLY SHOW THREE BLOG POSTS AND CREATE AN ANCHOR TAG FOR THE OLDER POSTS.
-'''
-
 
 @app.route('/')
 def get_all_posts():
-    all_posts = BlogPost.query.all()
+    page = request.args.get('page', 1, type=int)
+    all_posts = BlogPost.query.order_by(BlogPost.id.desc()).paginate(page=page, per_page=3)
     return render_template("index.html", all_posts=all_posts, user=current_user)
 
 
@@ -274,5 +275,5 @@ def contact():
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=8000)
     ckeditor.init_app(app, CKEDITOR_SERVE_LOCAL=True)
