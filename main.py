@@ -280,7 +280,7 @@ def contact():
     if request.method == 'POST':
         if request.form['name'] == '' or request.form['email'] == '' or request.form['message'] == '':
             flash('Please fill out the fields correctly.')
-            return redirect(url_for('home'))
+            return redirect(url_for('contact'))
 
         else:
             name = request.form['name']
