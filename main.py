@@ -12,6 +12,7 @@ from sqlalchemy.ext.declarative import declarative_base
 import datetime
 from dotenv import load_dotenv
 import os
+import smtplib
 
 load_dotenv()
 
@@ -34,6 +35,11 @@ db = SQLAlchemy(app)
 
 #TO CREATE RELATIONAL DATABASES
 Base = declarative_base()
+
+#SMTP
+MY_EMAIL = os.getenv('EMAIL')
+MY_PASSWORD = os.getenv('PASSWORD')
+TO_ADDRESS = os.getenv('TO_ADDRESS')
 
 
 #FLASK-LOGIN
@@ -271,6 +277,28 @@ def about():
 
 @app.route("/contact")
 def contact():
+    if request.method == 'POST':
+        if request.form['name'] == '' or request.form['email'] == '' or request.form['message'] == '':
+            flash('Please fill out the fields correctly.')
+            return redirect(url_for('home'))
+
+        else:
+            name = request.form['name']
+            email = request.form['email']
+            message = request.form['message']
+
+            with smtplib.SMTP("smtp.gmail.com", port=587) as connection:
+                connection.starttls()
+                connection.login(MY_EMAIL, MY_PASSWORD)
+                connection.sendmail(from_addr=MY_EMAIL,
+                                    to_addrs=TO_ADDRESS,
+                                    msg=f"Subject: You have a message!\n\n"
+                                        f"Name: {name}\n"
+                                        f"Email: {email}\n\n"
+                                        f"Message: {message}")
+
+            flash('Message successfully sent.')
+
     return render_template("contact.html", user=current_user)
 
 
