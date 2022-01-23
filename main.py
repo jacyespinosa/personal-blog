@@ -275,7 +275,7 @@ def about():
     return render_template("about.html", user=current_user)
 
 
-@app.route("/contact")
+@app.route("/contact", methods=["GET", "POST"])
 def contact():
     if request.method == 'POST':
         if request.form['name'] == '' or request.form['email'] == '' or request.form['message'] == '':
