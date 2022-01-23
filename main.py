@@ -294,7 +294,7 @@ def contact():
                                     to_addrs=TO_ADDRESS,
                                     msg=f"Subject: You have a message!\n\n"
                                         f"Name: {name}\n"
-                                        f"Email: {email}\n\n"
+                                        f"Email: {email}\n"
                                         f"Message: {message}")
 
             flash('Message successfully sent.')
